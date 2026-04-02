@@ -1,13 +1,33 @@
 import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { LogicalPosition } from "@tauri-apps/api/dpi";
+import { getCurrentWindow, currentMonitor } from "@tauri-apps/api/window";
+import { PhysicalPosition } from "@tauri-apps/api/dpi";
 import "./App.css";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
   const [name, setName] = useState("");
+  const [posIndex, setPosIndex] = useState(0);
+
+  async function moveWindow() {
+    const win = getCurrentWindow();
+    const monitor = await currentMonitor();
+    if (!monitor) return;
+
+    const { width, height } = monitor.size;
+    const winSize = await win.outerSize();
+
+    const positions = [
+      new PhysicalPosition(0, 0),
+      new PhysicalPosition(width - winSize.width, 0),
+      new PhysicalPosition(width - winSize.width, height - winSize.height),
+      new PhysicalPosition(0, height - winSize.height),
+    ];
+
+    await win.setPosition(positions[posIndex % 4]);
+    setPosIndex((i) => i + 1);
+  }
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -46,7 +66,7 @@ function App() {
         <button type="submit">Greet</button>
       </form>
       <p>{greetMsg}</p>
-      <button onClick={() => getCurrentWindow().setPosition(new LogicalPosition(0, 0))}>Move window</button>
+      <button onClick={moveWindow}>Move window</button>
     </main>
   );
 }
