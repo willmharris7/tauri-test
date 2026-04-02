@@ -7,22 +7,26 @@ function App() {
   const [posIndex, setPosIndex] = useState(0);
 
   async function moveWindow() {
-    const win = getCurrentWindow();
-    const monitor = await currentMonitor();
+    const window = getCurrentWindow();
+    const windowSize = await window.outerSize(); // gets OS info of window size
+    const windowWidth = windowSize.width
+    const windowHeight = windowSize.height
+    const monitor = await currentMonitor(); // gets OS level hardware info about the monitor
     if (!monitor) return;
-
-    const { width, height } = monitor.size;
-    const winSize = await win.outerSize();
+    const monitorSize = monitor.size
+    const monitorWidth = monitorSize.width;
+    const monitorHeight = monitorSize.height;
+    
 
     const positions = [
       new PhysicalPosition(0, 0),
-      new PhysicalPosition(width - winSize.width, 0),
-      new PhysicalPosition(width - winSize.width, height - winSize.height),
-      new PhysicalPosition(0, height - winSize.height),
+      new PhysicalPosition(monitorWidth - windowWidth, 0),
+      new PhysicalPosition(monitorWidth - windowWidth, monitorHeight - windowHeight ),
+      new PhysicalPosition(0, monitorHeight - windowHeight ),
     ];
 
-    await win.setPosition(positions[posIndex % 4]);
-    setPosIndex((i) => i + 1);
+    await window.setPosition(positions[posIndex]);
+    setPosIndex((i) => i === 3 ? 0 : i + 1); // loops the PhysicalPositions array 0-3
   }
 
   return (
