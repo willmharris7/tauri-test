@@ -3,7 +3,7 @@ use std::process::Command; // Command is basically a terminal prompt
 #[tauri::command]
 fn ask_claude(prompt: String) -> Result<String, String> {
     let output = Command::new("claude") 
-        .args(["-p", "--output-format", "json", &prompt]) // p for prompt, output-format puts it in json, 
+        .args(["-p", "--allowedTools", "Bash(*localhost:3030*)", "--output-format", "json", &prompt]) // p for prompt, output-format puts it in json,
         .output()
         .map_err(|e| format!("Failed to run claude: {}", e))?;
 
