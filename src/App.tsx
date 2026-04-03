@@ -1,28 +1,45 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
-import { getNextWindowPosition, setWindowPosition } from "./lib/moveWindow";
-import { checkScreenpipeRunning } from "./lib/checkScreenpipeRunning";
 
 function App() {
-  const [posIndex, setPosIndex] = useState(0);
-  const [screenpipeRunning, setScreenpipeRunning] = useState<boolean | null>(null);
+  const [prompt, setPrompt] = useState("");
+  const [output, setOutput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  async function moveWindow() {
-    const position = await getNextWindowPosition(posIndex);
-    if (!position) return;
-    await setWindowPosition(position);
-    setPosIndex((i) => i === 3 ? 0 : i + 1); // loops the PhysicalPositions array 0-3
-  }
-
-  async function setScreenpipeStatus() {
-    setScreenpipeRunning(await checkScreenpipeRunning());
+  async function sendPrompt() {
+    if (!prompt.trim()) return;
+    setLoading(true);
+    setError("");
+    setOutput("");
+    try {
+      const result = await invoke<string>("ask_claude", { prompt });
+      setOutput(result);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <main>
-      <button onClick={moveWindow}>Move window</button>
-      <button onClick={setScreenpipeStatus}>Check screenpipe</button>
-      {screenpipeRunning !== null && <p>Screenpipe running: {screenpipeRunning ? "yes" : "no"}</p>}
+      <div className="chat">
+        <textarea
+          className="input"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          placeholder="Ask Claude..."
+          rows={4}
+          disabled={loading}
+        />
+        <button onClick={sendPrompt} disabled={loading || !prompt.trim()}>
+          {loading ? "Thinking..." : "Send"}
+        </button>
+        {error && <pre className="output error">{error}</pre>}
+        {output && <pre className="output">{output}</pre>}
+      </div>
     </main>
   );
 }
