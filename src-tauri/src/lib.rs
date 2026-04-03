@@ -1,4 +1,36 @@
-use std::process::Command; // Command is basically a terminal prompt  
+use std::net::TcpStream;
+use std::process::Command; // Command is basically a terminal prompt
+use tauri::Emitter;
+use std::thread;
+use std::time::{Duration, Instant};
+
+fn start_screenpipe_background(app_handle: tauri::AppHandle) {
+    thread::spawn(move || {
+        Command::new("npx")
+            .args(["screenpipe@latest", "record"])
+            .spawn()
+            .expect("Failed to start screenpipe");
+
+        let timeout = Duration::from_secs(60);
+        let start = Instant::now();
+
+        loop {
+            if TcpStream::connect_timeout(
+                &"127.0.0.1:3030".parse().unwrap(),
+                Duration::from_secs(1),
+            ).is_ok() {
+                break;
+            }
+            if start.elapsed() > timeout {
+                let _ = app_handle.emit("screenpipe-ready", false);
+                return;
+            }
+            thread::sleep(Duration::from_millis(500));
+        }
+
+        let _ = app_handle.emit("screenpipe-ready", true);
+    });
+}
 
 #[tauri::command]
 fn ask_claude(prompt: String) -> Result<String, String> {
@@ -27,6 +59,10 @@ fn ask_claude(prompt: String) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            start_screenpipe_background(app.handle().clone());
+            Ok(())
+        })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![ask_claude])
         .run(tauri::generate_context!())

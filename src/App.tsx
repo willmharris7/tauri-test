@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
 function App() {
@@ -7,6 +8,14 @@ function App() {
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [screenpipeReady, setScreenpipeReady] = useState(false);
+
+  useEffect(() => {
+    const unlisten = listen<boolean>("screenpipe-ready", (event) => {
+      setScreenpipeReady(event.payload);
+    });
+    return () => { unlisten.then(f => f()); };
+  }, []);
 
   async function sendPrompt() {
     if (!prompt.trim()) return;
@@ -21,6 +30,10 @@ function App() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!screenpipeReady) {
+    return <main><p>Starting screenpipe...</p></main>;
   }
 
   return (
