@@ -28,7 +28,7 @@ function App() {
     } catch (e) {
       setError(String(e));
     } finally {
-      setLoading(false);
+      setLoading(false);  
     }
   }
 
