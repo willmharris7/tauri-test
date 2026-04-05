@@ -13,10 +13,22 @@ struct ScreenpipeProcess(Mutex<Option<u32>>);
     // Option allows for null if it's not already running 
     // Mutex means this process can only be accessed by one thread at a time, to prevent two threads sending contradicting simultaneous instructions
 
+fn get_screenpipe_path(app_handle: &tauri::AppHandle) -> std::path::PathBuf { //PathBuf is Rust's String-like version of a file path 
+    app_handle.path().resource_dir() 
+        // .resource_dir() is where the binary is copied to, changes for dev/prod
+        // for dev it's src-tauri/target/debug
+        // for prod it's MyApp.app/Contents/Resources
+        // This is necessary because the /binaries folder where screenpipe actually lives is considered source code. Source code is never actually accessible to a running app. 
+        .expect("Failed to get resource dir")
+        .join("screenpipe") // the platform part of the original binary filename is automatically stripped when copied over
+}
+
 fn start_screenpipe_background(app_handle: tauri::AppHandle) {
     thread::spawn(move || {
-        let child = Command::new("npx")
-            .args(["screenpipe@latest", "record"])
+        let binary_path = get_screenpipe_path(&app_handle);
+
+        let child = Command::new(&binary_path)
+            .args(["record"])
             .process_group(0) // make it its own process group leader so we can kill the whole tree
             .spawn()
             .expect("Failed to start screenpipe");
