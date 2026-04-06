@@ -65,10 +65,10 @@ fn start_screenpipe_background(app_handle: tauri::AppHandle) {
 #[tauri::command]
 fn draw_box(app: tauri::AppHandle) -> Result<(), String> {
     use tauri::{WebviewWindowBuilder, WebviewUrl, Manager};
-    if let Some(w) = app.get_webview_window("box-overlay") {
-        let _ = w.close();
+    if let Some(window) = app.get_webview_window("box-overlay") {
+        let _ = window.close();
     }
-    WebviewWindowBuilder::new(&app, "box-overlay", WebviewUrl::App("src/components/box.html".into()))
+    WebviewWindowBuilder::new(&app, "box-overlay", WebviewUrl::App("box.html".into()))
         .title("")
         .decorations(false)
         .transparent(true)
