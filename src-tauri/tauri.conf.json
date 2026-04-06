@@ -17,6 +17,7 @@
         "height": 600
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
     }

@@ -63,6 +63,25 @@ fn start_screenpipe_background(app_handle: tauri::AppHandle) {
 }
 
 #[tauri::command]
+fn draw_box(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::{WebviewWindowBuilder, WebviewUrl, Manager};
+    if let Some(w) = app.get_webview_window("box-overlay") {
+        let _ = w.close();
+    }
+    WebviewWindowBuilder::new(&app, "box-overlay", WebviewUrl::App("src/components/box.html".into()))
+        .title("")
+        .decorations(false)
+        .transparent(true)
+        .always_on_top(true)
+        .resizable(false)
+        .position(500.0, 500.0)
+        .inner_size(100.0, 100.0)
+        .build()
+        .map_err(|e: tauri::Error| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn ask_claude(prompt: String) -> Result<String, String> {
     let output = Command::new("claude")
         .args(["-p", "--allowedTools", "Bash(*localhost:3030*),Bash(*sqlite3*.screenpipe*)", "--output-format", "json", &prompt]) // p for prompt, output-format puts it in json,
@@ -96,7 +115,7 @@ pub fn run() {
             Ok(()) // Ok() is the success result needed from a .setup() and the interior () means there's no result to return 
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![ask_claude])
+        .invoke_handler(tauri::generate_handler![ask_claude, draw_box])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app_handle, event| {

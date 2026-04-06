@@ -50,6 +50,7 @@ function App() {
         <button onClick={sendPrompt} disabled={loading || !prompt.trim()}>
           {loading ? "Thinking..." : "Send"}
         </button>
+        <button onClick={() => invoke("draw_box")}>Draw Box</button>
         {error && <pre className="output error">{error}</pre>}
         {output && <pre className="output">{output}</pre>}
       </div>
